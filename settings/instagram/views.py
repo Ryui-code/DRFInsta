@@ -20,36 +20,47 @@ CommentSerializer,
 CommentLikeSerializer,
 )
 
-class RegisterView(generics.CreateAPIView):
+class RegisterView(GenericAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
-
-class LoginView(GenericAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = LoginSerializer
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data["user"]
+        user = serializer.save()
         refresh = RefreshToken.for_user(user)
 
         return Response({
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
         })
 
-class LogoutView(APIView):
+class LoginView(GenericAPIView):
+    serializer_class = LoginSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        })
+
+class LogoutView(GenericAPIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         try:
-            refresh_token = request.data["refresh"]
+            refresh_token = request.data['refresh']
             token = RefreshToken(refresh_token)
             token.blacklist()
         except Exception:
-            return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+            return Response({'detail': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': 'Successfully logged out'}, status=status.HTTP_200_OK)
 
 class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UserProfile.objects.all()
