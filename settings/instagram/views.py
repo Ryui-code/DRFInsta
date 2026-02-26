@@ -37,7 +37,7 @@ class RegisterView(GenericAPIView):
 
 class LoginView(GenericAPIView):
     serializer_class = LoginSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -50,7 +50,7 @@ class LoginView(GenericAPIView):
             'access': str(refresh.access_token)
         })
 
-class LogoutView(GenericAPIView):
+class LogoutView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -84,18 +84,19 @@ class FollowViewSet(viewsets.ModelViewSet):
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     search_fields = ['user', 'hashtag']
     filterset_class = PostFilterSet
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(user=user)
 
 class PostContentViewSet(viewsets.ModelViewSet):
     queryset = PostContent.objects.all()
     serializer_class = PostContentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
 
 class PostLikeViewSet(viewsets.ModelViewSet):
     queryset = PostLike.objects.all()
@@ -108,10 +109,14 @@ class PostLikeViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(user=user)
+
+    def get_queryset(self):
+        return Comment.objects.filter(id=self.request.user.id)
 
 class CommentLikeViewSet(viewsets.ModelViewSet):
     queryset = CommentLike.objects.all()

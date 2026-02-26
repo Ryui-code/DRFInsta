@@ -7,10 +7,10 @@ from django.conf import settings
 import joblib
 
 model_path = os.path.join(settings.BASE_DIR, 'naive_model.pkl')
-joblib.load(model_path)
+model = joblib.load(model_path)
 
 vector_path = os.path.join(settings.BASE_DIR, 'vector.pkl')
-joblib.load(vector_path)
+vector = joblib.load(vector_path)
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
@@ -70,10 +70,14 @@ class PostLikeSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
+    check_comments = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = "__all__"
+        fields = ['post', 'comment', 'user', 'created_date', 'check_comments']
+
+    def get_check_comments(self, obj):
+        return model.predict(vector.transform([obj.comment]))
 
 class CommentLikeSerializer(serializers.ModelSerializer):
     class Meta:

@@ -25,7 +25,7 @@ class Follow(models.Model):
 class Post(models.Model):
     description = models.TextField(null=True, blank=True)
     hashtag = models.CharField(max_length=100, null=True, blank=True)
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True, blank=True)
     created_date = models.DateField(auto_now_add=True)
 
     def __str__(self):
@@ -52,7 +52,7 @@ class PostLike(models.Model):
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     comment = models.TextField()
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True, blank=True)
     created_date = models.DateField(auto_now_add=True)
 
     def __str__(self):
