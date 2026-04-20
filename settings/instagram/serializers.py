@@ -6,12 +6,6 @@ import os
 from django.conf import settings
 import joblib
 
-model_path = os.path.join(settings.BASE_DIR, 'naive_model.pkl')
-model = joblib.load(model_path)
-
-vector_path = os.path.join(settings.BASE_DIR, 'vector.pkl')
-vector = joblib.load(vector_path)
-
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
 
@@ -67,6 +61,12 @@ class PostLikeSerializer(serializers.ModelSerializer):
         if PostLike.objects.filter(post=attrs['post'], user=attrs['user']).exists():
             raise serializers.ValidationError("U are already liked it.")
         return attrs
+
+model_path = os.path.join(settings.BASE_DIR, 'naive_model.pkl')
+model = joblib.load(model_path)
+
+vector_path = os.path.join(settings.BASE_DIR, 'vector.pkl')
+vector = joblib.load(vector_path)
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
