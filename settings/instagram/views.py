@@ -1,5 +1,6 @@
 from rest_framework import viewsets, generics, permissions, status
-from rest_framework.generics import GenericAPIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from .models import *
@@ -20,47 +21,52 @@ CommentSerializer,
 CommentLikeSerializer,
 )
 
-class RegisterView(GenericAPIView):
+class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
-    permission_classes = [AllowAny]
 
-    def post(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         refresh = RefreshToken.for_user(user)
 
         return Response({
+            'detail': 'Successfully registered',
             'refresh': str(refresh),
             'access': str(refresh.access_token)
         })
 
-class LoginView(GenericAPIView):
+class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
-    permission_classes = [AllowAny]
 
-    def post(self, request):
+    def post(self, request: Request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
+        user = serializer.validated_data.get('user')
         refresh = RefreshToken.for_user(user)
 
         return Response({
+            'detail': 'Successfully logged in',
             'refresh': str(refresh),
             'access': str(refresh.access_token)
         })
 
 class LogoutView(APIView):
-    permission_classes = [AllowAny]
-
     def post(self, request):
         try:
-            refresh_token = request.data['refresh']
-            token = RefreshToken(refresh_token)
+            refresh = request.data.get('refresh')
+            if not refresh:
+                return Response({'detail': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh)
             token.blacklist()
+            return Response({
+                'detail': 'Successfully logged out'
+            }, status=status.HTTP_205_RESET_CONTENT)
         except Exception:
-            return Response({'detail': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'detail': 'Successfully logged out'}, status=status.HTTP_200_OK)
+            return Response({
+                'detail': 'Invalid token'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UserProfile.objects.all()
